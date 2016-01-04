@@ -1,0 +1,117 @@
+﻿<Page x:Class="MondoUniversalWindowsSample.Views.AccountSummaryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:controls="using:MondoUniversalWindowsSample.Controls"
+      xmlns:viewModels="using:MondoUniversalWindowsSample.ViewModels"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=viewModels:AccountPageViewModel}">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Padding="20"
+          HorizontalAlignment="Stretch">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="80" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Style="{StaticResource TitleTextBlockStyle}"
+                   Grid.ColumnSpan="2"
+                   Text="{Binding AccountName}" />
+
+        <controls:BalanceBox Grid.Column="0"
+                             Grid.Row="1"
+                             Margin="0,0,5,0"
+                             Label="Balance"
+                             Amount="{Binding Balance, Converter={StaticResource StringFormatConverter}, ConverterParameter='C'}" />
+
+        <controls:BalanceBox Grid.Column="1"
+                             Grid.Row="1"
+                             Margin="5,0,0,0"
+                             Label="Spent Today"
+                             Amount="{Binding SpentToday, Converter={StaticResource StringFormatConverter}, ConverterParameter='C'}" />
+
+        <ListView Grid.Row="2"
+                  Grid.Column="0"
+                  Grid.ColumnSpan="2"
+                  Margin="0, 20, 0, 20"
+                  ItemsSource="{Binding Transactions}"
+                  HorizontalContentAlignment="Stretch"
+                  HorizontalAlignment="Stretch">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment"
+                            Value="Stretch" />
+                    <Setter Property="Padding"
+                            Value="0" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid HorizontalAlignment="Stretch"
+                          BorderBrush="LightGray"
+                          BorderThickness="0,0,0,1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="64" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="128" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                BorderThickness="0"
+                                Width="64"
+                                Height="64"
+                                CornerRadius="6"
+                                Background="{ThemeResource ThumbBackgroundThemeBrush}" />
+
+                        <Border Grid.Column="0"
+                                BorderThickness="0"
+                                Width="64"
+                                Height="64"
+                                CornerRadius="6">
+                            <Border.Background>
+                                <ImageBrush Stretch="Uniform">
+                                    <ImageBrush.ImageSource>
+                                        <BitmapImage  UriSource="{Binding ImageUrl}"
+                                                      DecodePixelHeight="64"
+                                                      DecodePixelWidth="64" />
+                                    </ImageBrush.ImageSource>
+                                </ImageBrush>
+                            </Border.Background>
+                        </Border>
+
+                        <TextBlock Grid.Column="1"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding Description}"
+                                   FontSize="21.333"
+                                   Margin="20,0,0,0" />
+
+                        <TextBlock Grid.Column="2"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Right"
+                                   Text="{Binding Amount, Converter={StaticResource StringFormatConverter}, ConverterParameter='+0.00;0.00; '}"
+                                   FontSize="21.333"
+                                   Margin="0,0,20,0" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <Button Grid.Row="3"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Content="Log out"
+                Command="{Binding LogoutCommand}" />
+
+    </Grid>
+</Page>
