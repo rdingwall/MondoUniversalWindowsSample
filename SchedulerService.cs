@@ -14,6 +14,5 @@ namespace MondoUniversalWindowsSample
         public IScheduler Dispatcher { get; } = CoreDispatcherScheduler.Current;
 
         public IScheduler TaskPool { get; } = TaskPoolScheduler.Default;
-
     }
 }
