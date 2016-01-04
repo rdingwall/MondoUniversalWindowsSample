@@ -61,6 +61,7 @@ namespace MondoUniversalWindowsSample
         {
             _disposables.Add(_accountPageViewModel.LogoutCommand.Subscribe(_ =>
             {
+                _accessTokenRefreshDisposable.Disposable = null;
                 _mondoClient.ClearAccessToken();
                 _navigationService.NavigateTo<LoginPage>(_loginPageViewModel);
             }));
