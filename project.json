@@ -2,7 +2,7 @@
   "dependencies": {
     "Microsoft.NETCore.UniversalWindowsPlatform": "5.0.0",
     "Microsoft.Xaml.Behaviors.Uwp.Managed": "1.0.3",
-    "Mondo": "0.4.1.94",
+    "Mondo": "0.5.0.100",
     "Rx-Main": "2.2.5",
     "Rx-WindowStoreApps": "2.2.5"
   },

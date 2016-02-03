@@ -1,4 +1,5 @@
 ﻿using Windows.UI.Xaml.Input;
+using Mondo;
 
 namespace MondoUniversalWindowsSample.ViewModels
 {
@@ -50,5 +51,7 @@ namespace MondoUniversalWindowsSample.ViewModels
         public ObservableCommand LoginCommand { get; } = new ObservableCommand();
 
         public ObservableCommand<KeyRoutedEventArgs> KeyPressCommand { get; } = new ObservableCommand<KeyRoutedEventArgs>();
+
+        public AccessToken AccessToken { get; set; }
     }
 }

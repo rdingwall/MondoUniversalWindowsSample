@@ -42,9 +42,9 @@ namespace MondoUniversalWindowsSample
                 var accountPageViewModel = new AccountPageViewModel();
                 var schedulerService = new SchedulerService();
 
-                var mondoClient = new MondoClient("https://production-api.gmon.io", "YOUR_CLIENT_ID_HERE", "YOUR_CLIENT_SECRET_HERE");
+                var mondoAuthorizationClient = new MondoAuthorizationClient("YOUR_CLIENT_ID_HERE", "YOUR_CLIENT_SECRET_HERE", "https://production-api.gmon.io");
 
-                var appController = new AppController(navigationService, mondoClient, loginPageViewModel, accountPageViewModel, schedulerService);
+                var appController = new AppController(navigationService, mondoAuthorizationClient, loginPageViewModel, accountPageViewModel, schedulerService);
 
                 appController.Start();
                 rootFrame.Navigate(typeof (LoginPage), e.Arguments);

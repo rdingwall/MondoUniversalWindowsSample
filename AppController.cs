@@ -16,19 +16,19 @@ namespace MondoUniversalWindowsSample
         private readonly SerialDisposable _accessTokenRefreshDisposable = new SerialDisposable();
         private readonly LoginPageViewModel _loginPageViewModel;
         private readonly AccountPageViewModel _accountPageViewModel;
-        private readonly IMondoClient _mondoClient;
+        private readonly IMondoAuthorizationClient _mondoAuthorizationClient;
         private readonly INavigationService _navigationService;
         private readonly ISchedulerService _schedulerService;
 
         public AppController(
             INavigationService navigationService,
-            IMondoClient mondoClient,
+            IMondoAuthorizationClient mondoAuthorizationClient,
             LoginPageViewModel loginPageViewModel,
             AccountPageViewModel accountPageViewModel,
             ISchedulerService schedulerService)
         {
             _navigationService = navigationService;
-            _mondoClient = mondoClient;
+            _mondoAuthorizationClient = mondoAuthorizationClient;
             _loginPageViewModel = loginPageViewModel;
             _accountPageViewModel = accountPageViewModel;
             _schedulerService = schedulerService;
@@ -62,19 +62,20 @@ namespace MondoUniversalWindowsSample
             _disposables.Add(_accountPageViewModel.LogoutCommand.Subscribe(_ =>
             {
                 _accessTokenRefreshDisposable.Disposable = null;
-                _mondoClient.ClearAccessToken();
                 _navigationService.NavigateTo<LoginPage>(_loginPageViewModel);
             }));
         }
 
         private void ScheduleAccessTokenRefresh()
         {
-            _accessTokenRefreshDisposable.Disposable = Observable.Timer(_mondoClient.AccessTokenExpiresAt)
+            DateTimeOffset refreshTime = DateTimeOffset.UtcNow.AddSeconds(_loginPageViewModel.AccessToken.ExpiresIn);
+
+            _accessTokenRefreshDisposable.Disposable = Observable.Timer(refreshTime)
                 .SubscribeOn(_schedulerService.TaskPool)
                 .ObserveOn(_schedulerService.Dispatcher)
                 .Subscribe(async _ =>
                 {
-                    await _mondoClient.RefreshAccessTokenAsync();
+                    _loginPageViewModel.AccessToken = await _mondoAuthorizationClient.RefreshAccessTokenAsync(_loginPageViewModel.AccessToken.RefreshToken);
                     ScheduleAccessTokenRefresh();
                 });
         }
@@ -95,38 +96,43 @@ namespace MondoUniversalWindowsSample
                 _loginPageViewModel.IsBusy = true;
 
                 _loginPageViewModel.StatusText = "Authenticating...";
-                await _mondoClient.RequestAccessTokenAsync(_loginPageViewModel.Username, _loginPageViewModel.Password);
 
-                ScheduleAccessTokenRefresh();
+                _loginPageViewModel.AccessToken = await _mondoAuthorizationClient.AuthenticateAsync(_loginPageViewModel.Username, _loginPageViewModel.Password);
 
-                _loginPageViewModel.StatusText = "Fetching accounts...";
-                IList<Account> accounts = await _mondoClient.GetAccountsAsync();
-
-                _loginPageViewModel.StatusText = "Fetching balance...";
-                BalanceResponse balance = await _mondoClient.GetBalanceAsync(accounts[0].Id);
-
-                _loginPageViewModel.StatusText = "Fetching transactions...";
-                IList<Transaction> transactions = await _mondoClient.GetTransactionsAsync(accounts[0].Id, expand: "merchant");
-
-                _accountPageViewModel.AccountName = accounts[0].Description;
-                _accountPageViewModel.Balance = balance.Balance / 100m;
-                _accountPageViewModel.SpentToday = Math.Abs(balance.SpendToday / 100m);
-
-                foreach (Transaction transaction in transactions.OrderByDescending(t => t.Created))
+                using (var mondoClient = new MondoClient(_loginPageViewModel.AccessToken.Value, "https://production-api.gmon.io"))
                 {
-                    var transactionViewModel = new TransactionViewModel();
+                    ScheduleAccessTokenRefresh();
 
-                    transactionViewModel.Amount = transaction.Amount / 100m;
-                    transactionViewModel.ImageUrl = transaction.Merchant?.Logo;
-                    transactionViewModel.Description = transaction.Merchant?.Name ?? transaction.Description;
+                    _loginPageViewModel.StatusText = "Fetching accounts...";
+                    IList<Account> accounts = await mondoClient.GetAccountsAsync();
 
-                    _accountPageViewModel.Transactions.Add(transactionViewModel);
+                    _loginPageViewModel.StatusText = "Fetching balance...";
+                    Balance balance = await mondoClient.GetBalanceAsync(accounts[0].Id);
+
+                    _loginPageViewModel.StatusText = "Fetching transactions...";
+                    IList<Transaction> transactions =
+                        await mondoClient.GetTransactionsAsync(accounts[0].Id, expand: "merchant");
+
+                    _accountPageViewModel.AccountName = accounts[0].Description;
+                    _accountPageViewModel.Balance = balance.Value/100m;
+                    _accountPageViewModel.SpentToday = Math.Abs(balance.SpendToday/100m);
+
+                    foreach (Transaction transaction in transactions.OrderByDescending(t => t.Created))
+                    {
+                        var transactionViewModel = new TransactionViewModel();
+
+                        transactionViewModel.Amount = transaction.Amount/100m;
+                        transactionViewModel.ImageUrl = transaction.Merchant?.Logo;
+                        transactionViewModel.Description = transaction.Merchant?.Name ?? transaction.Description;
+
+                        _accountPageViewModel.Transactions.Add(transactionViewModel);
+                    }
+
+                    _navigationService.NavigateTo<AccountSummaryPage>(_accountPageViewModel);
+
+                    _loginPageViewModel.Password = null;
+                    _loginPageViewModel.Username = null;
                 }
-
-                _navigationService.NavigateTo<AccountSummaryPage>(_accountPageViewModel);
-
-                _loginPageViewModel.Password = null;
-                _loginPageViewModel.Username = null;
             }
             catch (Exception ex)
             {
